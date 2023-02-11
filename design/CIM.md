@@ -1,8 +1,5 @@
 # Cash Accept
 
-## <a name='TableofContents'></a>Table of Contents
----
-
 <!-- vscode-markdown-toc -->
 * [Table of Contents](#TableofContents)
 * [Header vs Payload](#HeadervsPayload)
