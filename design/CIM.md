@@ -1,10 +1,25 @@
 # Cash Accept
 
+<!-- vscode-markdown-toc -->
+* 1. [Header vs Payload](#HeadervsPayload)
+* 2. [CIM INFO Commands](#CIMINFOCommands)
+* 3. [CIM EXECUTE Commands](#CIMEXECUTECommands)
+* 4. [CIM Events](#CIMEvents)
+* 5. [TABLES](#TABLES)
+* 6. [CLASSES](#CLASSES)
+
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
 What we want to do is, looking at the CIM XFS Spec, cherry pick some of the CIM INFO, EXEC and EVENT from the SP logs, so we can tell the CIM story in an easily understandable form. For this review I am looking at the NHCashCheckAcceptor330.pdf but any CIM XFS spec will do, they are essentially all the same. 
 
 Per the spec the CIM interface the WFS_SERVICE_CLASS_CIM is '13'. It supports INFO/EXECUTE commands and there are also EVENTs; together they tell the complete story. All we have to do is find them and present them in an easily readable for. 
 
-## Header vs Payload
+##  1. <a name='HeadervsPayload'></a>Header vs Payload
 
 In the logs the output of commands have both a header and a payload. The header looks like this: 
 
@@ -24,12 +39,12 @@ They payload follows. The header is pretty standard across all commands; you can
 We want to pull the `tsTimestamp` and the `hResult` from the header. If we are going to report non-zero `hResult` values we should also have a comment column for an English explanation. 
 
 ---
-## CIM INFO Commands
+##  2. <a name='CIMINFOCommands'></a>CIM INFO Commands
 ---
 
 Looking at the INFO commands, we are only interested in commands pertaining to customer transactions. We want to tell enough of the story to answer most of the questions that come up. For the first cut we won't try to represent the full story because the explanation gets too busy. Its a judgement call. 
 
-### WFS_INF_CIM_STATUS (1301)
+###  2.1. <a name='WFS_INF_CIM_STATUS1301'></a>WFS_INF_CIM_STATUS (1301)
 
 This command is used to obtain the status of the CIM. 
 
@@ -61,7 +76,7 @@ There is a list of positions too. In the logs I see 2 positions listed (In/OUT).
 
 Only generic error messages are raised by this command. 
 
-### WFS_INF_CIM_CASH_UNIT_INFO (1303)
+###  2.2. <a name='WFS_INF_CIM_CASH_UNIT_INFO1303'></a>WFS_INF_CIM_CASH_UNIT_INFO (1303)
 
 This command is use to obtain information about the status and contents of the cash units and recycler units in the CIM. This information changes over time. 
 
@@ -99,13 +114,13 @@ and the other looks like this:
 ```
 I think the first stype is for the CCIM and the second style is for the BRM. In both cases a lot of the same inforamtion is present, but the layout is different so they have to be handled differently. 
 
-### WFS_INF_CIM_BANKNOTE_TYPES (1306)
+###  2.3. <a name='WFS_INF_CIM_BANKNOTE_TYPES1306'></a>WFS_INF_CIM_BANKNOTE_TYPES (1306)
 
 Bank note types that can be detected by the banknote reader. The idea here is that over time the treasury updates what it defines as a given note (e.g. 5 USD) because security features are added and notes evolve over time. For example: usNoteID 3, 8, 13 all refer to $ 5 USD. Some commands refer to bank note types. We want to capture this set so we can translate. 
 
 For the first cut I dont think we will do anything with this command. Instead we will pre-configure the mapping into code. Its the quickest solution. 
 
-### WFS_INF_CIM_CASH_IN_STATUS (1307)
+###  2.4. <a name='WFS_INF_CIM_CASH_IN_STATUS1307'></a>WFS_INF_CIM_CASH_IN_STATUS (1307)
 
 Information about the status of the currently active cash-in transaction or in the case where no cash in transaction is active, the status of the most recently ended cash in transaction. 
 
@@ -126,12 +141,12 @@ In the nwLog files, a line that contains `CATEGORY[1307]` and `WFS_GETINFO_COMPL
 Good for indicating current state of the CashIn transaction or how it ended. 
 
 ---
-## CIM EXECUTE Commands
+##  3. <a name='CIMEXECUTECommands'></a>CIM EXECUTE Commands
 ---
 
 Looking at the EXECUTE commands, we are only interested in commands pertaining to customer transactions. We want to tell enough of the story to answer most of the questions that come up. We won't try to represent the full story because the explanation gets too busy. Its a judgement call. 
 
-### WFS_CMD_CIM_CASH_IN_START (1301)
+###  3.1. <a name='WFS_CMD_CIM_CASH_IN_START1301'></a>WFS_CMD_CIM_CASH_IN_START (1301)
 
 The start of a Cashin transaction. If were want to track CashIn transactions, this is where is starts. During the CashIn any number of WFS_CMD_CIM_CASH_IN commands can be issued; the transation ends when either a WFS_CMD_CIM_CASH_IN_ROLLBACK, WFS_CMD_CIM_CASH_IN_END, WFS_CMD_CIM_RETRACT or WFS_CMD_CIM_RESET is called. 
 
@@ -150,7 +165,7 @@ The payload is a `lpCashInStart` or pointer to a `WFSCIMCASHINSTART`:
 
 I dont think we want to pull any information from the payload, just know that a CASH_IN has started. 
 
-### WFS_CMD_CIM_CASH_IN (1302)
+###  3.2. <a name='WFS_CMD_CIM_CASH_IN1302'></a>WFS_CMD_CIM_CASH_IN (1302)
 
 This command moves items into the CIM from an input position. 
 
@@ -173,7 +188,7 @@ lppNoteNumber =
 
 We already have some media movements. The above tells us we moved 20 x $20 and 1 x $100 to the input position. 
 
-### WFS_CMD_CIM_CASH_IN_END (1303)
+###  3.3. <a name='WFS_CMD_CIM_CASH_IN_END1303'></a>WFS_CMD_CIM_CASH_IN_END (1303)
 
 This command ends a CASH IN Transaction. 
 
@@ -200,7 +215,7 @@ The payload is a `lpCashInfo` or pointer to a `WFSCIMCASHINFO`:
 ```
 
 
-### WFS_CMD_CIM_CASH_IN_ROLLBACK (1304)
+###  3.4. <a name='WFS_CMD_CIM_CASH_IN_ROLLBACK1304'></a>WFS_CMD_CIM_CASH_IN_ROLLBACK (1304)
 
 This command is used to roll back a cash-in transaction. It causes all the cash items cashed since the last CASH_IN_START to be returned to the customer. 
 
@@ -208,7 +223,7 @@ In the nwlogs, the line is identified as containing `COMMAND[1304]`, `WFS_EXECUT
 
 I dont see a payload, just a [header](#Header_vs_Payload). 
 
-### WFS_CMD_CIM_RETRACT (1305)
+###  3.5. <a name='WFS_CMD_CIM_RETRACT1305'></a>WFS_CMD_CIM_RETRACT (1305)
 
 Retract items from the Output position. 
 
@@ -225,7 +240,7 @@ The payload looks like this:
 
 The hResult of the header matters. The first one I looked at had `hResult = [-1316]`. Looking at the spec, -1316 means `WFS_ERR_CIM_NOITEMS`. That's something we want to report on. 
 
-### WFS_CMD_CIM_RESET (1313)
+###  3.6. <a name='WFS_CMD_CIM_RESET1313'></a>WFS_CMD_CIM_RESET (1313)
 
 This command is used by the application to perform a hardware reset which will attempt to return the CIM device to a known good state.
 
@@ -234,10 +249,10 @@ In the nwlogs, the line is identified as containing `COMMAND[1313]`, `WFS_EXECUT
 I dont see a payload, just a [header](#Header_vs_Payload). 
 
 ---
-## CIM Events
+##  4. <a name='CIMEvents'></a>CIM Events
 ---
 
-### WFS_USRE_CIM_CASHUNITTHRESHOLD (1303)
+###  4.1. <a name='WFS_USRE_CIM_CASHUNITTHRESHOLD1303'></a>WFS_USRE_CIM_CASHUNITTHRESHOLD (1303)
 
 Generated when a threshold condition has occurred in one of the cash units.
 
@@ -259,7 +274,7 @@ The payload is `lpCashUnit` or a pointer to a `WFSCIMCASHIN`.
 		ulCount = [2000],
 ```
 
-### WFS_SRVE_CIM_CASHUNITINFOCHANGED (1304)
+###  4.2. <a name='WFS_SRVE_CIM_CASHUNITINFOCHANGED1304'></a>WFS_SRVE_CIM_CASHUNITINFOCHANGED (1304)
 
 Generated when:
 
@@ -270,7 +285,7 @@ In the nwlogs, the line is identified as containing `SERVICE_EVENT[1304]`, `WFS_
 
 The payload is `lpCashUnit` or a pointer to a `WFSCIMCASHIN`.
 
-### WFS_SRVE_CIM_ITEMSTAKEN (1307)
+###  4.3. <a name='WFS_SRVE_CIM_ITEMSTAKEN1307'></a>WFS_SRVE_CIM_ITEMSTAKEN (1307)
 
 This service event specifies that items presented to the user have been taken.
 
@@ -278,7 +293,7 @@ In the nwlogs, the line is identified as containing `SERVICE_EVENT[1307]` and `W
 
 There is no payload.
 
-### WFS_EXEE_CIM_INPUTREFUSE (1309)
+###  4.4. <a name='WFS_EXEE_CIM_INPUTREFUSE1309'></a>WFS_EXEE_CIM_INPUTREFUSE (1309)
 
 This execute event specifies that the device has refused either a portion or the entire amount of the cash-in order.
 
@@ -293,7 +308,7 @@ The payload is a reason for refusal:
 ```
 We will want to report the reason in plain English. 
 
-### WFS_SRVE_CIM_ITEMSPRESENTED (1310)
+###  4.5. <a name='WFS_SRVE_CIM_ITEMSPRESENTED1310'></a>WFS_SRVE_CIM_ITEMSPRESENTED (1310)
 
 This service event specifies that items have been presented to the output position, and the shutter has been opened to allow the user to take the items.
 
@@ -308,7 +323,7 @@ The payload is a `lpPositionInfo`. For example:
 	}
 
 
-### WFS_SRVE_CIM_ITEMSINSERTED (1311)
+###  4.6. <a name='WFS_SRVE_CIM_ITEMSINSERTED1311'></a>WFS_SRVE_CIM_ITEMSINSERTED (1311)
 
 This service event specifies that items have been inserted into the cash-in position by the user.
 
@@ -316,13 +331,13 @@ In the nwlogs, the line is identified as containing `SERVICE_EVENT[1311]` and `W
 
 The payload is supposed to be a `lpPositionInfo`, but I'm not seeing it in our logs. 
 
-### WFS_EXEE_CIM_NOTEERROR (1312)
+###  4.7. <a name='WFS_EXEE_CIM_NOTEERROR1312'></a>WFS_EXEE_CIM_NOTEERROR (1312)
 
 This execute event specifies the reason for an item detection error during an operation which involves moving items. 
 
 No examples in our logs. 
 
-### WFS_SRVE_CIM_MEDIADETECTED (1314)
+###  4.8. <a name='WFS_SRVE_CIM_MEDIADETECTED1314'></a>WFS_SRVE_CIM_MEDIADETECTED (1314)
 
 This service event is generated if media is detected during a reset (WFS_CMD_CIM_RESET command).
 
@@ -330,7 +345,7 @@ No examples in our logs.
 
 ---
 
-## TABLES
+##  5. <a name='TABLES'></a>TABLES
 
 ---
 
@@ -341,7 +356,7 @@ Note we can create these tables up front - as XML - and read them in. We dont ha
 Also - line by line - only report changed values. Its change people want to see. If you report every value every time it becomes unreadable; you bury the information. 
 
 ---
-### CIM Status Table
+###  5.1. <a name='CIMStatusTable'></a>CIM Status Table
 ---
 
 Status of the CIM device over time. I've mulled the ideal of rolling all devices into 1 table but I'm leaning toward keeping all the interfaces separate for the first pass. 
@@ -359,7 +374,7 @@ Populated:
 - On receipt of [WFS_INF_CIM_STATUS](#WFS_INF_CIM_STATUS-(1301))
 
 ---
-### CashIn Transaction Table
+###  5.2. <a name='CashInTransactionTable'></a>CashIn Transaction Table
 ---
 The Cashin Transaction Table logs the lifecylce of a CashIn Transaction. This table should answer questions about what $ was deposited, and where it all went, line by line. 
 
@@ -425,7 +440,7 @@ It will be populated by these messages:
         - set comment to English equivalent of wAdditionalBunches
 
 ---
-### Logical Cash Unit Table
+###  5.3. <a name='LogicalCashUnitTable'></a>Logical Cash Unit Table
 ---
 
 We can have 1 table for all logical cash units. We can put all entries in the same table because we can select by usNumber. It means some field values (`timestamp`, `error`, `comment`) will be doubled. 
@@ -467,18 +482,18 @@ For Output we probably want to have 1 worksheet per logical cash unit.
 
 
 ---
-## CLASSES
+##  6. <a name='CLASSES'></a>CLASSES
 ---
 
 Support classes. 
 
-### Discriminates
+###  6.1. <a name='Discriminates'></a>Discriminates
 
 --- 
 
 Discriminates are configured classes where if you throw a log line at it, it returns with a tuple - found and line-type. There is one discriminate for each line INFO, EXEC and EVENT line we want to identify. 
 
-### BankNoteType
+###  6.2. <a name='BankNoteType'></a>BankNoteType
 
 ---
 
