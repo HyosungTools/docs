@@ -1,7 +1,7 @@
 # Cash Accept
 
 <!-- vscode-markdown-toc -->
-* 1. [Header vs Payload](#HeadervsPayload)
+* 1. [Header vs Payload]([#HeadervsPayload](CIM.md#1-header-vs-payload))
 * 2. [CIM INFO Commands](#CIMINFOCommands)
 * 3. [CIM EXECUTE Commands](#CIMEXECUTECommands)
 * 4. [CIM Events](#CIMEvents)
