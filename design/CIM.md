@@ -51,11 +51,11 @@ What we want to do is, looking at the CIM XFS Spec, cherry pick some of the CIM 
 
 We can use a regular expression search, where we plug in the command offset, to identify the lines we want. For example:
 
-- Use regex `GETINFO.1301.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CIM_STATUS`
-- Use regex `EXECUTE.1302.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN`
-- Use regex `SERVICE_EVENT.1310.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_ITEMSPRESENTED`
+* Use regex `GETINFO.1301.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CIM_STATUS`
+* Use regex `EXECUTE.1302.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN`
+* Use regex `SERVICE_EVENT.1310.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_ITEMSPRESENTED`
 
-The lines we are interested in are listed in the TOC. 
+The lines we are interested in are listed in the TOC.
 
 ---
 
@@ -410,8 +410,6 @@ The strategy is to create TABLES and populate them with data from all the INFO, 
 
 We can create these tables at instantiation time - load empty tables as XML. We dont have to generate them in code. Also when adding a line only report changed values. Its change over time people want to see. If you report every value every time it becomes unreadable; you bury the information.
 
-
-
 ### <a name='CIMStatusTable'></a>CIM Status Table
 
 ---
@@ -430,7 +428,6 @@ Status of the CIM device over time. I've mulled the ideal of rolling all devices
 Populated:
 
 * On receipt of [WFS_INF_CIM_STATUS](#WFS_INF_CIM_STATUS-(1301))
-
 
 ### <a name='CashInTransactionTable'></a>CashIn Transaction Table
 
@@ -499,7 +496,6 @@ It will be populated by these messages:
   * [WFS_SRVE_CIM_ITEMSPRESENTED](#WFS_SRVE_CIM_ITEMSPRESENTED1310)
     * set position to OUTPUT
     * set comment to English equivalent of wAdditionalBunches
-
 
 ### <a name='LogicalCashUnitTable'></a>Logical Cash Unit Table
 
