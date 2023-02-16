@@ -97,7 +97,7 @@ Looking at the INFO commands, we are only interested in commands pertaining to c
 
 This command is used to obtain the status of the CIM.
 
-In the nwlog files, a WFS_INF_CIM_STATUS line is one containing `CATEGORY[1301]`, `WFS_GETINFO_COMPLETE` and `fwDevice`.
+Use the regex `GETINFO.1301.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CIM_STATUS` log lines.
 
 The payload is an `lpStatus`.
 
@@ -129,7 +129,7 @@ Only generic error messages are raised by this command.
 
 This command is use to obtain information about the status and contents of the cash units and recycler units in the CIM. This information changes over time.
 
-In the nwlog files, a line that contains `CATEGORY[1303]`, `WFS_GETINFO_COMPLETE` and then `lppCashIn` is a line that contains CIM status info.
+Use the regex `GETINFO.1303.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CIM_CASH_UNIT_INFO` log lines.
 
 Reviewing the logs, there appears to be 2 formats to the payload. One looks like this:
 
@@ -174,7 +174,9 @@ For the first cut I dont think we will do anything with this command. Instead we
 
 Information about the status of the currently active cash-in transaction or in the case where no cash in transaction is active, the status of the most recently ended cash in transaction.
 
-In the nwLog files, a line that contains `CATEGORY[1307]` and `WFS_GETINFO_COMPLETE` and then `wStatus` is a line that contains CashIn Status:
+Use the regex `GETINFO.1307.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CIM_CASH_UNIT_INFO` log lines.
+
+The payload looks like this:
 
 ```
 {
@@ -202,26 +204,17 @@ Looking at the EXECUTE commands, we are only interested in commands pertaining t
 
 The start of a Cashin transaction. If were want to track CashIn transactions, this is where is starts. During the CashIn any number of WFS_CMD_CIM_CASH_IN commands can be issued; the transation ends when either a WFS_CMD_CIM_CASH_IN_ROLLBACK, WFS_CMD_CIM_CASH_IN_END, WFS_CMD_CIM_RETRACT or WFS_CMD_CIM_RESET is called.
 
-In the nwlogs, the line is identified as containing `dwCommand = [1301]`, `usTellerID` and `bUseRecycleUnits`.
+Use the regex `EXECUTE.1301.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN_START` log lines
 
 The payload is a `lpCashInStart` or pointer to a `WFSCIMCASHINSTART`:
 
-```
-{
-    usTellerID = [0],
-    bUseRecycleUnits = [0],
-    fwOutputPosition = [512],
-    fwInputPosition = [4]
-}
-```
-
-I dont think we want to pull any information from the payload, just know that a CASH_IN has started.
+In the logs I'm looking at I don't see a payload.
 
 ### <a name='WFS_CMD_CIM_CASH_IN1302'></a>WFS_CMD_CIM_CASH_IN (1302)
 
 This command moves items into the CIM from an input position.
 
-In the nwlogs, the line is identified as containing `COMMAND[1302]`, `WFS_EXECUTE_COMPLETE` and `usNumOfNoteNumbers`.
+Use the regex `EXECUTE.1302.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN` log lines
 
 The payload is a `lpNoteNumberList` or pointer to a `WFSCIMNOTENUMBERLIST`:
 
@@ -244,7 +237,7 @@ We already have some media movements. The above tells us we moved 20 x $20 and 1
 
 This command ends a CASH IN Transaction.
 
-In the nwlogs, the line is identified as containing `COMMAND[1303]`, `WFS_EXECUTE_COMPLETE` and `lppCashIn`.
+Use the regex `EXECUTE.1303.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN_END` log lines
 
 The payload is a `lpCashInfo` or pointer to a `WFSCIMCASHINFO`:
 
@@ -270,7 +263,7 @@ The payload is a `lpCashInfo` or pointer to a `WFSCIMCASHINFO`:
 
 This command is used to roll back a cash-in transaction. It causes all the cash items cashed since the last CASH_IN_START to be returned to the customer.
 
-In the nwlogs, the line is identified as containing `COMMAND[1304]`, `WFS_EXECUTE_COMPLETE` and `lpBuffer`.
+Use the regex `EXECUTE.1304.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_CASH_IN_ROLLBACK` log lines.
 
 I dont see a payload, just a [header](#Header_vs_Payload).
 
@@ -278,7 +271,7 @@ I dont see a payload, just a [header](#Header_vs_Payload).
 
 Retract items from the Output position.
 
-In the nwlogs, the line is identified as containing `COMMAND[1305]`, `WFS_EXECUTE_COMPLETE` and `lpBuffer`.
+Use the regex `EXECUTE.1305.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_RETRACT` log lines.
 
 The payload looks like this:
 
@@ -295,7 +288,7 @@ The hResult of the header matters. The first one I looked at had `hResult = [-13
 
 This command is used by the application to perform a hardware reset which will attempt to return the CIM device to a known good state.
 
-In the nwlogs, the line is identified as containing `COMMAND[1313]`, `WFS_EXECUTE_COMPLETE` and `lpBuffer`.
+Use the regex `EXECUTE.1313.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CIM_RESET` log lines.
 
 I dont see a payload, just a [header](#Header_vs_Payload).
 
@@ -311,7 +304,7 @@ Generated when a threshold condition has occurred in one of the cash units.
 
 This event can be triggered either by hardware sensors in the device or by the logical ulCount reaching the ulMaximum value as specified in the WFSCIMCASHIN structure.
 
-In the nwlogs, the line is identified as containing `USER_EVENT[1303]`, `WFS_USER_EVENT` and `usNumber`.
+Use the regex `USER_EVENT.1303.*WFS_USER_EVENT` to find all `WFS_USRE_CIM_CASHUNITTHRESHOLD` log lines.
 
 The payload is `lpCashUnit` or a pointer to a `WFSCIMCASHIN`.
 
@@ -334,7 +327,7 @@ Generated when:
 * the status of usStatus and/or usPStatus changes
 * for every cash unit changed in any way (e.g. ulCount, ulRejectCount, ulInitialCount, ulDispensedCount and ulPresentedCount)
 
-In the nwlogs, the line is identified as containing `SERVICE_EVENT[1304]`, `WFS_SERVICE_EVENT` and `usNumber`.
+Use the regex `SERVICE_EVENT.1304.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_CASHUNITINFOCHANGED` log lines.
 
 The payload is `lpCashUnit` or a pointer to a `WFSCIMCASHIN`.
 
@@ -342,7 +335,7 @@ The payload is `lpCashUnit` or a pointer to a `WFSCIMCASHIN`.
 
 This service event specifies that items presented to the user have been taken.
 
-In the nwlogs, the line is identified as containing `SERVICE_EVENT[1307]` and `WFS_SERVICE_EVENT`.
+Use the regex `SERVICE_EVENT.1307.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_ITEMSTAKEN` log lines.
 
 There is no payload.
 
@@ -350,7 +343,7 @@ There is no payload.
 
 This execute event specifies that the device has refused either a portion or the entire amount of the cash-in order.
 
-In the nwlogs, the line is identified as containing `SERVICE_EVENT[1309]`, `WFS_SERVICE_EVENT` and `usReason`.
+Use the regex `EXECUTE_EVENT.1309.*WFS_EXECUTE_EVENT` to find all `WFS_EXEE_CIM_INPUTREFUSE` log lines.
 
 The payload is a reason for refusal:
 
@@ -366,7 +359,7 @@ We will want to report the reason in plain English.
 
 This service event specifies that items have been presented to the output position, and the shutter has been opened to allow the user to take the items.
 
-In the nwlogs, the line is identified as containing `SERVICE_EVENT[1310]`, `WFS_SERVICE_EVENT` and `wPosition`.
+Use the regex `SERVICE_EVENT.1310.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_ITEMSPRESENTED` log lines.
 
 The payload is a `lpPositionInfo`. For example:
 
@@ -380,7 +373,7 @@ The payload is a `lpPositionInfo`. For example:
 
 This service event specifies that items have been inserted into the cash-in position by the user.
 
-In the nwlogs, the line is identified as containing `SERVICE_EVENT[1311]` and `WFS_SERVICE_EVENT`.
+Use the regex `SERVICE_EVENT.1311.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_ITEMSINSERTED` log lines.
 
 The payload is supposed to be a `lpPositionInfo`, but I'm not seeing it in our logs.
 
@@ -388,13 +381,15 @@ The payload is supposed to be a `lpPositionInfo`, but I'm not seeing it in our l
 
 This execute event specifies the reason for an item detection error during an operation which involves moving items.
 
-No examples in our logs.
+Use the regex `EXECUTE_EVENT.1312.*WFS_EXECUTE_EVENT` to find all `WFS_EXEE_CIM_NOTEERROR` log lines.
 
 ### <a name='WFS_SRVE_CIM_MEDIADETECTED1314'></a>WFS_SRVE_CIM_MEDIADETECTED (1314)
 
 This service event is generated if media is detected during a reset (WFS_CMD_CIM_RESET command).
 
-No examples in our logs.
+Use the regex `SERVICE_EVENT.1314.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CIM_MEDIADETECTED` log lines.
+
+I don't see a payload in our logs.
 
 ---
 

@@ -87,7 +87,7 @@ Looking at the INFO commands, we are only interested in commands pertaining to c
 
 This command is used to obtain the status of the CDM.
 
-In the nwlog files, a WFS_INF_CDM_STATUS line is one containing `CATEGORY[301]`, `WFS_GETINFO_COMPLETE` and `fwDevice`.
+Use the regex `GETINFO.301.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CDM_STATUS` log lines.
 
 The payload is an `lpStatus`.
 
@@ -105,7 +105,7 @@ We should consider reporting on the `lppPosition` data because it gives more ins
 
 This command is used to obtain information regarding the status and contents of the cash units in the CDM.
 
-In the nwlog files, a line that contains `CATEGORY[303]`, `WFS_GETINFO_COMPLETE` and then `lppList` is a line that contains CIM status info.
+Use the regex `GETINFO.303.*WFS_GETINFO_COMPLETE` to find all `WFS_INF_CDM_CASH_UNIT_INFO` log lines.
 
 Reviewing the logs, there appears to be 2 formats to the payload. One looks like this:
 
@@ -141,7 +141,7 @@ I think the first format is the complete lists, the second is an update to one o
 
 This command performs the dispensing of items to the customer.
 
-In the nwlogs, I think a regular expression search `EXECUTE.302.*WFS_EXECUTE_COMPLETE` will find the line.
+Use the regex `EXECUTE.302.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CDM_DISPENSE` log lines.
 
 The payload looks like this:
 
@@ -197,7 +197,7 @@ And this time the `ulAmount` is present.
 
 This command will move items to the exit position for removal by the user.
 
-In the nwlogs, I think a regular expression search `EXECUTE.303.*WFS_EXECUTE_COMPLETE` will find the line.
+Use the regex `EXECUTE.303.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CDM_PRESENT` log lines.
 
 There is no payload, so look for hResult.
 
@@ -205,21 +205,23 @@ There is no payload, so look for hResult.
 
 This command will move items from the intermediate stacker and transport them to a reject cash unit (i.e. a cash unit with usType WFS_CDM_TYPEREJECTCASSETTE).
 
-In the nwlogs, the regular expression search `EXECUTE.304.*WFS_EXECUTE_COMPLETE` will find the line.
+Use the regex `EXECUTE.304.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CDM_REJECT` log lines.
 
 There is no payload, so look for hResult.
 
-### <a name='WFS_CMD_CASH_INRETRACT305'></a>WFS_CMD_CASH_IN RETRACT (305)
+### <a name='WFS_CMD_CDM_RETRACT305'></a>WFS_CMD_CDM_RETRACT (305)
 
 This command will retract items which may have been in customer access from an output position or from internal areas within the CDM.
 
-In the nwlogs, the regular expression search `EXECUTE.305.*WFS_EXECUTE_COMPLETE` will find the line.
+Use the regex `EXECUTE.305.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CASH_IN_RETRACT` log lines.
 
 In the logs I'm looking at I dont see a payload. Some devices are capable of scanning returned items. For now lets consider this downstream.
 
 ### <a name='WFS_CMD_CDM_RESET321'></a>WFS_CMD_CDM_RESET (321)
 
 A command by the application to perform a hardware reset.
+
+Use the regex `EXECUTE.321.*WFS_EXECUTE_COMPLETE` to find all `WFS_CMD_CDM_RESET` log lines.
 
 Looking through the logs, I dont see any payload.
 
@@ -242,6 +244,8 @@ So for now let's just look at those two.
 
 Generated on cash unit change.
 
+Use the regex `SERVICE_EVENT.304.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CDM_CASHUNITINFOCHANGED` log lines.
+
 The payload is an `lpCashUnit`
 
 ```
@@ -257,6 +261,8 @@ The payload is an `lpCashUnit`
 ### <a name='WFS_SRVE_CDM_ITEMSTAKEN309'></a>WFS_SRVE_CDM_ITEMSTAKEN (309)
 
 This service event is generated when items presented to the user have been taken. This event may be generated at any time.
+
+Use the regex `SERVICE_EVENT.309.*WFS_SERVICE_EVENT` to find all `WFS_SRVE_CDM_CASHUNITINFOCHANGED` log lines.
 
 There is no payload.
 
