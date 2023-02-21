@@ -289,21 +289,21 @@ The Worksheet will be called CDM Status.
 
 The CDM Status Table will look like this:
 
-| Column    | Description                                             |
-|-----------|---------------------------------------------------------|
-| log file  | log file that the entry came from                       |
-| timestamp | timestamp of the entry                                  |
-| error     | any non-zero HResult                                    |
-| status    | fwDevice in truncated English                           |
-| safe      | fwSafeDoor in truncated English                         |
-| dispenser | fwDispenser in truncated English                        |
-| intstack  | fwIntermediateStacker in truncated English              |
-| shutter   | fwShutter from position[0] in truncated English         |
-| posstatus | fwPositionStatus from position[0] in truncated English  |
-| transport | fwTransport from position[0] in truncated English       |
-| transstat | fwTransportStatus from position[0] in truncated English |
-| position  | wDevicePosition in truncated English                    |
-| comment   | English interpretation of hResult error                 |
+| Column    | Source                | Description                           |
+|-----------|-----------------------|---------------------------------------|
+| file      | log file              | log file that the entry came from     |
+| time      | tsTimestamp           | timestamp of the entry                |
+| error     | hResult               | any non-zero HResult                  |
+| status    | fwDevice              | in truncated English                  |
+| safe      | fwSafeDoor            | in truncated English                  |
+| dispenser | fwDispenser           | in truncated English                  |
+| intstack  | fwIntermediateStacker | in truncated English                  |
+| shutter   | fwShutter             | from position[0] in truncated English |
+| posstatus | fwPositionStatus      | from position[0] in truncated English |
+| transport | fwTransport           | from position[0] in truncated English |
+| transstat | fwTransportStatus     | from position[0] in truncated English |
+| position  | wDevicePosition       | in truncated English                  |
+| comment   | various               | add context for reader                |
 
 Populated:
 
@@ -322,20 +322,21 @@ The table is populated by a lot of messages. Not every message field maps to a c
 
 The Cashin Transaction Table will consist of these columns:
 
-| Column    | Description                                    |
-|-----------|------------------------------------------------|
-| log file  | log file that the entry came from              |
-| timestamp | timestamp of the entry                         |
-| error     | any non-zero HResult                           |
-| position  | OUT, STACKER, REJECT, RETRACT, CUSTOMER, RESET |
-| $1        | number of $1 bills                             |
-| $2        | number of $2 bills                             |
-| $5        | number of $5 bills                             |
-| $10       | number of $10 bills                            |
-| $20       | number of $20 bills                            |
-| $50       | number of $50 bills                            |
-| $100      | number of $100 bills                           |
-| comment   | translation of error code, wStatus             |
+| Column   | Source      | Description                                    |
+|----------|-------------|------------------------------------------------|
+| file     | log file    | log file that the entry came from              |
+| time     | tsTimestamp | timestamp of the entry                         |
+| error    | hResult     | any non-zero HResult                           |
+| position | various     | OUT, STACKER, REJECT, RETRACT, CUSTOMER, RESET |
+| amount   | ulAmount    | WFS_CMD_CDM_DISPENSE                           |
+| $1       | lpulValues  | number of $1 bills                             |
+| $2       | lpulValues  | number of $2 bills                             |
+| $5       | lpulValues  | number of $5 bills                             |
+| $10      | lpulValues  | number of $10 bills                            |
+| $20      | lpulValues  | number of $20 bills                            |
+| $50      | lpulValues  | number of $50 bills                            |
+| $100     | lpulValues  | number of $100 bills                           |
+| comment  | various     | translation of error code, wStatus             |
 
 It will be populated by these messages:
 
@@ -359,34 +360,47 @@ It will be populated by these messages:
     * set position to RESET
     * set comment to application issues hardware reset
 
+### <a name='CashUnitSummary'></a>Cash Unit Summary
+
+---
+
+There are some values that never change, or change rarely,  during a days run of the ATM. It makes sense to peel these off into a separate table.
+
+| Column   | Description                                                       |
+|----------|-------------------------------------------------------------------|
+| file     | log file that the entry came from                                 |
+| time     | timestamp of the entry                                            |
+| error    | any non-zero HResult                                              |
+| number   | usNumber (index) of the cash unit structure                       |
+| type     | usType of cash unit (in English truncated e.g. RECYCL)            |
+| name     | lpszCashUnitName the cash unit identifier                         |
+| unit     | cUnitId[5] - the cash unit identifier                             |
+| currency | cCurrencyID - 3 character currency identifier (possibly 3 spaces) |
+| demon    | ulValues - the value of a single item in the cash unit            |
+| initial  | ulInitialCount of items that have entered the                     |
+| min      | ulMinumum - trigger for WFS_CDM_STATCULOW                         |
+| max      | ulMaximum - threshold for status 'high'                           |
+| comment  | if we have an error field, we need a comment field                |
+
 ### <a name='CashUnitTable'></a>Cash Unit Table
 
 ---
 
-We can have 1 table for all logical cash units. We can put all entries in the same table because we can select by usNumber. It means some field values (`timestamp`, `error`, `comment`) will be doubled.
+There are some values that change rapidly.
 
- In reporting we will have 1 worksheet per logical cash unit. The timstamp allows us to produce a time-series - how the cash unit changed over time.
-
-| Column           | Description                                                         |
-|------------------|---------------------------------------------------------------------|
-| log file         | log file that the entry came from                                   |
-| timestamp        | timestamp of the entry                                              |
-| error            | any non-zero HResult                                                |
-| usNumber         | index number of the cash unit structure                             |
-| usType           | type of cash unit (in English truncated e.g. RECYCL)                |
-| cUnitId          | the cash unit identifier                                            |
-| cCurrencyID      | 3 character currency identifier (possibly 3 spaces)                 |
-| ulValues         | the value of a single item in the cash unit                         |
-| ulCashInCount    | count of items that have entered the                                |
-| ulCount          | the meaning depends on the type of cash unit                        |
-| ulRejectCount    | the number of items from this cash unit which are in the reject bin |
-| ulMinumum        | trigger for WFS_CDM_STATCULOW                                       |
-| ulMaximum        | threshold for status 'high'                                         |
-| usStatus         | status of the cash unit (in English truncated e.g. OK, FULL, HIGH)  |
-| ulDispensedCount | the number of items dispensed from cash unit                        |
-| ulPresentedCount | the number of items from this cash unit presented                   |
-| ulRetractedCount | the number of items presented then retracted from this cash unit    |
-| comment          | if we have an error field, we need a comment field                  |
+| Column    | Description                                                                         |
+|-----------|-------------------------------------------------------------------------------------|
+| file      | log file that the entry came from                                                   |
+| time      | timestamp of the entry                                                              |
+| error     | any non-zero HResult                                                                |
+| number    | usNumber - index number of the cash unit structure                                  |
+| count     | ulCount - the meaning depends on the type of cash unit                              |
+| reject    | usNumber - the number of items in the reject bin                                    |
+| status    | usStatus of the cash unit (in English truncated e.g. OK, FULL, HIGH)                |
+| dispensed | ulDispensedCount - the number of items dispensed from cash unit                     |
+| presented | ulPresentedCount - the number of items from this cash unit presented                |
+| retracted | ulRetractedCount - the number of items presented then retracted from this cash unit |
+| comment   | if we have an error field, we need a comment field                                  |
 
 Populated on receipt of:
 
