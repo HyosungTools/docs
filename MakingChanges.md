@@ -88,7 +88,7 @@ I use Visual Studio as my editor but I build, run and test using cmd.exe.
 
 ## Commit
 
-When you are finished your work you can commit your changes. All commits should be well documented. In a cmd.exe, if you type the command `git log` you will see what I've done in the past. I have a title, and blank line, and a description of the change. Remember we want changes to deal with one thing only. 
+When you are finished your work you can commit your changes. I want to use ![conventional commits]([https://www.conventionalcommits.org/en/v1.0.0/). You should use conventional commits in your commit messages but I think its real impact is in merge commits.  
 
 ## Pull Request
 
